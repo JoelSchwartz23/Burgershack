@@ -1,0 +1,7 @@
+-- CREATE TABLE Burgers(
+--   id int NOT NULL AUTO_INCREMENT,
+--   name VARCHAR(255) NOT NULL,
+--   description VARCHAR(255) NOT NULL,
+--   price decimal(10, 2),
+--   PRIMARY key(id)
+-- )

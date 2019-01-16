@@ -1,40 +1,35 @@
 using System;
 using System.Collections.Generic;
-using Burgershack.Db;
+using System.Data;
+using Dapper;
 using BurgerShack.Models;
 
 namespace Burgershack.Repositories
 {
   public class BurgerRepository
   {
-    // private readonly FakeDB _db;
+    private readonly IDbConnection _db;
 
-    // public IEnumerable<Burger> GetAll()
-    // {
-    //     return _db.Query<IEnumerable<Burger>>(@"
-    //   //   // SELECT * FROM Burgers;
-    //   //   // ")
-
-
-
-    // }
+    public BurgerRepository(IDbConnection db)
+    {
+      _db = db;
+    }
+    public IEnumerable<Burger> GetAll()
+    {
+      return _db.Query<Burger>("SELECT * FROM Burgers");
+    }
 
     public Burger GetBurgerById(int id)
     {
-      try
-      {
-        return FakeDB.Burgers[id];
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine(ex);
-        return null;
-      }
+      return _db.QueryFirstOrDefault<Burger>($"SELECT * FROM Burgers WHERE id = @id", new { id });
     }
 
     public Burger AddBurger(Burger newburger)
     {
-      FakeDB.Burgers.Add(newburger);
+      int id = _db.ExecuteScalar<int>(@"
+ 	  INSERT INTO burgers(Name, Description, Price) Values(@Name, @Description, @Price);
+ 	  SELECT LAST_INSERT_ID();", newburger);
+      newburger.Id = id;
       return newburger;
     }
 
@@ -42,8 +37,14 @@ namespace Burgershack.Repositories
     {
       try
       {
-        FakeDB.Burgers[id] = newburger;
-        return newburger;
+        return _db.QueryFirstOrDefault<Burger>($@"
+          UPDATE burgers SET
+          Name= @Name,
+          Description = @Description,
+          Price = @Price
+          WHERE Id = @Id;
+          SELECT * FROM burgers WHERE id = @Id;
+        ", newburger);
       }
       catch (Exception ex)
       {
@@ -53,18 +54,15 @@ namespace Burgershack.Repositories
     }
 
 
+
     public bool DeleteBurger(int id)
     {
-      try
+      int success = _db.Execute("DELETE FROM Burgers WHERE id = @id", new { id });
+      if (success == 0)
       {
-        FakeDB.Burgers.Remove(FakeDB.Burgers[id]);
-        return true;
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine(ex);
         return false;
       }
+      return true;
     }
 
 
